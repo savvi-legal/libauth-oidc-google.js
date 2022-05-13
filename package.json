@@ -1,0 +1,29 @@
+{
+  "name": "@libauth/oidc-google",
+  "version": "0.9.0",
+  "description": "OIDC for Google Sign In for LibAuth.js",
+  "main": "index.js",
+  "scripts": {
+    "test": "node test.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/therootcompany/libauth-oidc-google.js.git"
+  },
+  "keywords": [
+    "OIDC",
+    "Google",
+    "Sign",
+    "In",
+    "Login",
+    "OAuth2",
+    "OAuth",
+    "LibAuth"
+  ],
+  "author": "AJ ONeal <aj@therootcompany.com> (https://therootcompany.com/)",
+  "license": "SEE LICENSE IN LICENSE",
+  "bugs": {
+    "url": "https://github.com/therootcompany/libauth-oidc-google.js/issues"
+  },
+  "homepage": "https://github.com/therootcompany/libauth-oidc-google.js#readme"
+}

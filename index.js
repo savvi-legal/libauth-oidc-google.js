@@ -1,8 +1,7 @@
 "use strict";
 
 //@ts-ignore
-//let E = require("libauth/lib/errors.js");
-let E = require("../../lib/errors.js");
+let E = require("libauth/lib/errors.js");
 
 /**
  * @typedef GoogleOIDCOpts
@@ -24,7 +23,6 @@ function create(userOpts) {
   let myOpts = {
     clientId: userOpts.clientId,
     clientSecret: userOpts.clientSecret,
-    // TODO final redirect? or no?
     redirectUri: userOpts.redirectUri,
     //
     iss: userOpts.iss ?? "https://accounts.google.com",
@@ -32,6 +30,7 @@ function create(userOpts) {
     claims: {
       // email_verified: userOpts.email_verified ?? true,
     },
+    // these are easily overwritten by req.query at time of request
     authorizationQuery: {
       client_id: userOpts.clientId,
       scope: "email profile",
