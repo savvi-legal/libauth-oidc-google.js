@@ -20,26 +20,37 @@ let E = require("libauth/lib/errors.js");
  * @param {GoogleOIDCOpts} userOpts
  */
 function create(userOpts) {
+  let issuer =
+    userOpts.issuer || userOpts.claims?.iss || "https://accounts.google.com";
+  let clientId = userOpts.clientId || userOpts.claims?.client_id;
+
   let myOpts = {
-    clientId: userOpts.clientId,
+    clientId: userOpts.clientId ?? clientId,
     clientSecret: userOpts.clientSecret,
     redirectUri: userOpts.redirectUri,
+    issuer: userOpts.issuer ?? issuer,
     //
-    iss: userOpts.iss ?? "https://accounts.google.com",
-    exp: userOpts.exp ?? true,
-    claims: {
-      // email_verified: userOpts.email_verified ?? true,
-    },
+    claims: Object.assign(
+      {
+        iss: issuer,
+        // email_verified: userOpts.email_verified ?? true,
+        exp: true,
+      },
+      userOpts.claims || {},
+    ),
     // these are easily overwritten by req.query at time of request
-    authorizationQuery: {
-      client_id: userOpts.clientId,
-      scope: "email profile",
-      //login_hint: req.query.login_hint,
-      access_type: userOpts.access_type ?? "online",
-    },
+    authQuery: Object.assign(
+      {
+        client_id: userOpts.authQuery?.client_id ?? userOpts.clientId,
+        scope: "email profile",
+        //login_hint: req.query.login_hint,
+        access_type: userOpts.access_type ?? "online",
+      },
+      userOpts.authQuery || {},
+    ),
     /** @param {Jws} jws */
     pluginVerify: function (jws) {
-      if (false === userOpts.verify) {
+      if (false === userOpts.verifyClaims) {
         return;
       }
 
@@ -49,6 +60,7 @@ function create(userOpts) {
         }
       }
     },
+    verifyClaims: userOpts.verifyClaims ?? true,
   };
 
   return myOpts;

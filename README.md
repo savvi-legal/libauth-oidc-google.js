@@ -20,7 +20,7 @@ npm install --save libauth @libauth/oidc-google
 ## Usage
 
 You must first create a set of credentials with an approved `redirect_uri` in
-the Google Cloud Dashboard:
+the _Google Cloud Dashboard_:
 
 - <https://console.developers.google.com/apis/dashboard>
 
@@ -43,15 +43,18 @@ GOOGLE_CLIENT_SECRET='XXXXXXXXXXXXXXXXXXXXXXXX'
 require("dotenv").config({ path: ".env" });
 ```
 
-### HTTP / Express Boilerplate
+### Example with Express
 
-The goal of LibAuth is to minimize _magic_ (anything difficult to understand or
-configure), and _maximize control_, without sacrificing _ease-of-use_ or
-convenience.
+The goal of LibAuth is
 
-To do this we require more copy-and-paste boilerplate than other auth
-libraries - with the upside is that it's all just normal, easy-to-replace
-_middleware_ - hopefully nothing unexpected or constraining.
+- 🚫 🪄 to minimize _magic_ (anything difficult to understand or configure)
+- 👍 🎮 and _maximize control_ \
+  without sacrificing
+- ✅ 🏪 _ease-of-use_ or convenience
+
+To do this we require more ✂️ 📋 copy-and-paste boilerplate than other auth
+libraries - with the upside is that it's all just normal, easy-to-replace 🥞
+_middleware_ - hopefully nothing 🤔 unexpected or ⛓ constraining.
 
 ```js
 // GOOGLE SIGN IN
@@ -77,7 +80,7 @@ app.get(
   "/api/session/oidc/accounts.google.com/code",
   googleOidc.exchangeCode,
   googleOidc.verifyToken,
-  MyDB.getUserClaimsByOidc,
+  MyDB.getUserClaimsByOidcEmail,
   libauth.setCookie,
   libauth.setCookieHeader,
   libauth.setTokens,
@@ -91,7 +94,7 @@ app.get(
 app.post(
   "/api/session/oidc/accounts.google.com/token",
   googleOidc.verifyToken,
-  MyDB.getUserClaimsByOidc,
+  MyDB.getUserClaimsByOidcEmail,
   libauth.setCookie,
   libauth.setCookieHeader,
   libauth.setTokens,
@@ -105,22 +108,26 @@ The things that LibAuth **can't** do for you:
 
 1. Get your user from your database
 2. Decide what details about the user (_claims_) to include in the token
+3. Invalidate a user's device in your database
 
 _Claims_ is a standard term meaning the standard (or private or custom)
-properties of a token, which describe the user.
+properties of a token which describe the user.
 
 The list of Standard OIDC Claims for ID Tokens:
 <https://openid.net/specs/openid-connect-core-1_0.html#StandardClaims>
 
 ```js
-MyDB.getUserByGoogleOidc = async function getUserByGoogleOidc(req, res, next) {
+MyDB.getUserClaimsByOidcEmail = async function (req, res, next) {
   // get a new session
-  let user = await DB.get({ ppid: req.authn.ppid });
+  let user = await DB.get({ email: req.authn.email });
 
   // "claims" is the standard term for "user info",
   // and includes pre-defined values such as:
-  let claims = {
+  let idClaims = {
+    // "Subject" the user ID or Pairwise ID (required)
     sub: user.id,
+
+    // ID Token Info (optional)
     given_name: user.first_name,
     family_name: user.first_name,
     picture: user.photo_url,
@@ -130,9 +137,31 @@ MyDB.getUserByGoogleOidc = async function getUserByGoogleOidc(req, res, next) {
     locale: user.localeName,
   };
 
-  libauth.set(req, { idClaims: claims });
+  let accessClaims = {
+    // "Subject" the user ID or Pairwise ID (required)
+    sub: user.id,
+  };
+
+  libauth.set(req, { idClaims: claims, accessClaims: accessClaims });
 };
 ```
+
+Some claims will be added for you unless provided or set to `false`:
+
+| Claim       | Description                             |
+| ----------- | --------------------------------------- |
+| `iss`       | Issuer (where public keys can be found) |
+| `iat`       | Issued At (defaults to current time)    |
+| `jti`       | JWT ID (used for tracking session)      |
+| `exp`       | Expiration (ex: '15m' or '2h')          |
+| `auth_time` | The original time of authentication     |
+
+Unless otherwise defined, the `refreshClaims` will be computed to contain the
+same `sub`, `iss`, `iat`, `aud`, `auth_time`, `azp`, and jti` as the computed
+idClaims, after the above claims are added.
+
+Note: In libauth `jti` is expected to be used to invalidate Refresh Tokens and
+associated ID and Access Tokens before their given _Expiration_.
 
 ## Developing
 
