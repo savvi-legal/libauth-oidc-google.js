@@ -24,6 +24,7 @@ function create(userOpts) {
   let myOpts = {
     clientId: userOpts.clientId,
     clientSecret: userOpts.clientSecret,
+    // TODO final redirect? or no?
     redirectUri: userOpts.redirectUri,
     //
     iss: userOpts.iss ?? "https://accounts.google.com",
