@@ -81,9 +81,11 @@ app.get(
   googleOidc.exchangeCode,
   googleOidc.verifyToken,
   MyDB.getUserClaimsByOidcEmail,
+  libauth.setClaims,
   libauth.setCookie,
-  libauth.setCookieHeader,
   libauth.setTokens,
+  MyDB.saveRefreshId,
+  libauth.setCookieHeader,
   libauth.redirect("/my-account"),
 );
 
@@ -95,9 +97,11 @@ app.post(
   "/api/session/oidc/accounts.google.com/token",
   googleOidc.verifyToken,
   MyDB.getUserClaimsByOidcEmail,
+  libauth.setClaims,
   libauth.setCookie,
-  libauth.setCookieHeader,
   libauth.setTokens,
+  MyDB.saveRefreshId,
+  libauth.setCookieHeader,
   libauth.sendTokens,
 );
 ```
@@ -117,32 +121,53 @@ The list of Standard OIDC Claims for ID Tokens:
 <https://openid.net/specs/openid-connect-core-1_0.html#StandardClaims>
 
 ```js
-MyDB.getUserClaimsByOidcEmail = async function (req, res, next) {
-  // get a new session
-  let user = await DB.get({ email: req.authn.email });
+MyDB.getUserClaimsByOidcEmail = function (req, res, next) {
+  Promise.resolve()
+    .then(async function () {
+      // get a new session
+      let email = libauth.get(req, "oidc").email;
+      let user = await DB.User.get({ email: email });
 
-  // "claims" is the standard term for "user info",
-  // and includes pre-defined values such as:
-  let idClaims = {
-    // "Subject" the user ID or Pairwise ID (required)
-    sub: user.id,
+      // "claims" is the standard term for "user info",
+      // and includes pre-defined values such as:
+      let idClaims = {
+        // "Subject" the user ID or Pairwise ID (required)
+        sub: user.id,
 
-    // ID Token Info (optional)
-    given_name: user.first_name,
-    family_name: user.first_name,
-    picture: user.photo_url,
-    email: user.email,
-    email_verified: user.email_verified_at || false,
-    zoneinfo: user.timezoneName,
-    locale: user.localeName,
-  };
+        // ID Token Info (optional)
+        given_name: user.first_name,
+        family_name: user.first_name,
+        picture: user.photo_url,
+        email: user.email,
+        email_verified: user.email_verified_at || false,
+        zoneinfo: user.timezoneName,
+        locale: user.localeName,
+      };
 
-  let accessClaims = {
-    // "Subject" the user ID or Pairwise ID (required)
-    sub: user.id,
-  };
+      let accessClaims = {
+        // "Subject" the user ID or Pairwise ID (required)
+        sub: user.id,
+      };
 
-  libauth.set(req, { idClaims: claims, accessClaims: accessClaims });
+      libauth.set(req, { idClaims: claims, accessClaims: accessClaims });
+
+      next();
+    })
+    .catch(next);
+};
+
+MyDB.saveRefreshId = function (req, res, next) {
+  Promise.resolve()
+    .then(async function () {
+      let refreshClaims = libauth.get(req, "refreshClaims");
+      let sessionId = refreshClaims.jti;
+      let userId = refreshClaims.sub;
+
+      await DB.Session.set({ id: sessionId, user_id: userId });
+
+      next();
+    })
+    .catch(next);
 };
 ```
 
