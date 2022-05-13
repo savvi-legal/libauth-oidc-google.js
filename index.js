@@ -8,6 +8,7 @@ let E = require("../../lib/errors.js");
  * @typedef GoogleOIDCOpts
  * @property {String} clientId
  * @property {String} [clientSecret]
+ * @property {String} [redirectUri]
  * @property {Boolean} verify
  * @property {String|Boolean} iss
  * @property {String|Boolean} exp
@@ -23,6 +24,8 @@ function create(userOpts) {
   let myOpts = {
     clientId: userOpts.clientId,
     clientSecret: userOpts.clientSecret,
+    redirectUri: userOpts.redirectUri,
+    //
     iss: userOpts.iss ?? "https://accounts.google.com",
     exp: userOpts.exp ?? true,
     claims: {
