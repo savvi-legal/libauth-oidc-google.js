@@ -122,52 +122,54 @@ The list of Standard OIDC Claims for ID Tokens:
 
 ```js
 MyDB.getUserClaimsByOidcEmail = function (req, res, next) {
-  Promise.resolve()
-    .then(async function () {
-      // get a new session
-      let email = libauth.get(req, "oidc").email;
-      let user = await DB.User.get({ email: email });
+  async function mw() {
+    // get a new session
+    let email = libauth.get(req, "oidc").email;
+    let user = await DB.User.get({ email: email });
 
-      // "claims" is the standard term for "user info",
-      // and includes pre-defined values such as:
-      let idClaims = {
-        // "Subject" the user ID or Pairwise ID (required)
-        sub: user.id,
+    // "claims" is the standard term for "user info",
+    // and includes pre-defined values such as:
+    let idClaims = {
+      // "Subject" the user ID or Pairwise ID (required)
+      sub: user.id,
 
-        // ID Token Info (optional)
-        given_name: user.first_name,
-        family_name: user.first_name,
-        picture: user.photo_url,
-        email: user.email,
-        email_verified: user.email_verified_at || false,
-        zoneinfo: user.timezoneName,
-        locale: user.localeName,
-      };
+      // ID Token Info (optional)
+      given_name: user.first_name,
+      family_name: user.first_name,
+      picture: user.photo_url,
+      email: user.email,
+      email_verified: user.email_verified_at || false,
+      zoneinfo: user.timezoneName,
+      locale: user.localeName,
+    };
 
-      let accessClaims = {
-        // "Subject" the user ID or Pairwise ID (required)
-        sub: user.id,
-      };
+    let accessClaims = {
+      // "Subject" the user ID or Pairwise ID (required)
+      sub: user.id,
+    };
 
-      libauth.set(req, { idClaims: claims, accessClaims: accessClaims });
+    libauth.set(req, { idClaims: claims, accessClaims: accessClaims });
 
-      next();
-    })
-    .catch(next);
+    next();
+  }
+
+  // (shim for adding await support to express)
+  Promise.resolve().then(mw).catch(next);
 };
 
 MyDB.saveRefreshId = function (req, res, next) {
-  Promise.resolve()
-    .then(async function () {
-      let refreshClaims = libauth.get(req, "refreshClaims");
-      let sessionId = refreshClaims.jti;
-      let userId = refreshClaims.sub;
+  async function mw() {
+    let refreshClaims = libauth.get(req, "refreshClaims");
+    let sessionId = refreshClaims.jti;
+    let userId = refreshClaims.sub;
 
-      await DB.Session.set({ id: sessionId, user_id: userId });
+    await DB.Session.set({ id: sessionId, user_id: userId });
 
-      next();
-    })
-    .catch(next);
+    next();
+  }
+
+  // (shim for adding await support to express)
+  Promise.resolve().then(mw).catch(next);
 };
 ```
 
