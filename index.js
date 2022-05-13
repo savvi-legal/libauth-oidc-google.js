@@ -5,15 +5,20 @@ let E = require("libauth/lib/errors.js");
 
 /**
  * @typedef GoogleOIDCOpts
+ * @property {String|Boolean} issuer
  * @property {String} clientId
  * @property {String} [clientSecret]
  * @property {String} [redirectUri]
- * @property {Boolean} verify
- * @property {String|Boolean} iss
- * @property {String|Boolean} exp
- * @property {String|Boolean} azp
- * @property {String|Boolean} access_type
+ * @property {Object} [claims]
+ * @property {String|Boolean} claims.iss
+ * @property {String|Boolean} claims.exp
+ * @property {String|Boolean} claims.azp
+ * @property {Object} [authQuery]
+ * @property {String|Boolean} [authQuery.client_id]
+ * @property {String|Boolean} [authQuery.scope]
+ * @property {String|Boolean} [authQuery.access_type]
  * @property {Function} pluginVerify
+ * @property {Boolean} verifyClaims
  */
 
 /**
@@ -22,7 +27,7 @@ let E = require("libauth/lib/errors.js");
 function create(userOpts) {
   let issuer =
     userOpts.issuer || userOpts.claims?.iss || "https://accounts.google.com";
-  let clientId = userOpts.clientId || userOpts.claims?.client_id;
+  let clientId = userOpts.clientId || userOpts.authQuery?.client_id;
 
   let myOpts = {
     clientId: userOpts.clientId ?? clientId,
@@ -41,10 +46,10 @@ function create(userOpts) {
     // these are easily overwritten by req.query at time of request
     authQuery: Object.assign(
       {
-        client_id: userOpts.authQuery?.client_id ?? userOpts.clientId,
+        client_id: clientId,
         scope: "email profile",
+        access_type: "online",
         //login_hint: req.query.login_hint,
-        access_type: userOpts.access_type ?? "online",
       },
       userOpts.authQuery || {},
     ),
@@ -54,7 +59,7 @@ function create(userOpts) {
         return;
       }
 
-      if (false !== userOpts.azp) {
+      if (false !== userOpts.claims?.azp) {
         if (jws.claims.azp != userOpts.clientId) {
           throw E.SUSPICIOUS_TOKEN();
         }
