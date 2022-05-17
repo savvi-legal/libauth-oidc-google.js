@@ -168,11 +168,11 @@ MyDB.updateSessionId = function (req, res, next) {
     }
 
     // Save the new session
-    let sessionClaims = libauth.get(req, "sessionClaims");
-    let sessionId = sessionClaims.jti;
-    let userId = sessionClaims.sub;
+    let newSessionClaims = libauth.get(req, "sessionClaims");
+    let newSessionId = newSessionClaims.jti;
+    let userId = newSessionClaims.sub;
 
-    await DB.Session.set({ id: sessionId, user_id: userId });
+    await DB.Session.set({ id: newSessionId, user_id: userId });
 
     next();
   }
