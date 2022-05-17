@@ -81,12 +81,13 @@ app.get(
   googleOidc.exchangeCode,
   googleOidc.verifyToken,
   MyDB.getUserClaimsByOidcEmail,
-  libauth.setClaims,
-  libauth.setCookie,
-  libauth.setTokens,
-  MyDB.saveRefreshId,
-  libauth.setCookieHeader,
-  libauth.redirect("/my-account"),
+  libauth.newSession(),
+  libauth.setClaims(),
+  libauth.setTokens(),
+  libauth.setCookie(),
+  MyDB.updateSessionId,
+  libauth.setCookieHeader(),
+  libauth.redirectWithTokens("/my-account"),
 );
 
 //
@@ -97,12 +98,13 @@ app.post(
   "/api/session/oidc/accounts.google.com/token",
   googleOidc.verifyToken,
   MyDB.getUserClaimsByOidcEmail,
-  libauth.setClaims,
-  libauth.setCookie,
-  libauth.setTokens,
-  MyDB.saveRefreshId,
-  libauth.setCookieHeader,
-  libauth.sendTokens,
+  libauth.newSession(),
+  libauth.setClaims(),
+  libauth.setCookie(),
+  libauth.setTokens(),
+  MyDB.updateSessionId,
+  libauth.setCookieHeader(),
+  libauth.sendTokens(),
 );
 ```
 
@@ -157,11 +159,18 @@ MyDB.getUserClaimsByOidcEmail = function (req, res, next) {
   Promise.resolve().then(mw).catch(next);
 };
 
-MyDB.saveRefreshId = function (req, res, next) {
+MyDB.updateSessionId = function (req, res, next) {
   async function mw() {
-    let refreshClaims = libauth.get(req, "refreshClaims");
-    let sessionId = refreshClaims.jti;
-    let userId = refreshClaims.sub;
+    // Invalidate the old session, if any
+    let sessionId = libauth.get(req, "sessionJws")?.claims?.jti;
+    if (sessionId) {
+      await DB.Session.set({ id: sessionId, deleted_at: new Date() });
+    }
+
+    // Save the new session
+    let sessionClaims = libauth.get(req, "sessionClaims");
+    let sessionId = sessionClaims.jti;
+    let userId = sessionClaims.sub;
 
     await DB.Session.set({ id: sessionId, user_id: userId });
 
@@ -183,9 +192,9 @@ Some claims will be added for you unless provided or set to `false`:
 | `exp`       | Expiration (ex: '15m' or '2h')          |
 | `auth_time` | The original time of authentication     |
 
-Unless otherwise defined, the `refreshClaims` will be computed to contain the
-same `sub`, `iss`, `iat`, `aud`, `auth_time`, `azp`, and jti` as the computed
-idClaims, after the above claims are added.
+Unless otherwise defined, `sessionClaims` and `refreshClaims` will be computed
+to contain the same `sub`, `iss`, `iat`, `aud`, `auth_time`, `azp`, and jti` as
+the computed idClaims, after the above claims are added.
 
 Note: In libauth `jti` is expected to be used to invalidate Refresh Tokens and
 associated ID and Access Tokens before their given _Expiration_.
