@@ -72,7 +72,7 @@ let googleOidc = libauth.oidc(
 // (requires `clientId` and `clientSecret`)
 //
 app.get(
-  "/api/session/oidc/accounts.google.com/auth",
+  "/api/authn/oidc/accounts.google.com/auth",
   googleOidc.setAuthUrl,
   googleOidc.redirectToAuthUrl,
 );
@@ -162,7 +162,7 @@ MyDB.getUserClaimsByOidcEmail = function (req, res, next) {
 MyDB.updateSessionId = function (req, res, next) {
   async function mw() {
     // Invalidate the old session, if any
-    let sessionId = libauth.get(req, "sessionJws")?.claims?.jti;
+    let sessionId = libauth.get(req, "currentSessionClaims")?.jti;
     if (sessionId) {
       await DB.Session.set({ id: sessionId, deleted_at: new Date() });
     }
