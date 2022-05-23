@@ -1,8 +1,8 @@
 "use strict";
 
 //@ts-ignore
-//let E = require("libauth/lib/errors.js");
-let E = require("../../lib/errors.js");
+let E = require("libauth/lib/errors.js");
+//let E = require("../../lib/errors.js");
 
 /**
  * @typedef GoogleOIDCOpts
